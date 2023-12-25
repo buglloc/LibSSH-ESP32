@@ -29,11 +29,16 @@ static inline size_t mbedtls_cipher_info_get_iv_size(
 }
 
 #define MBEDTLS_PRIVATE(X) X
+#define mbedtls_md_info_from_ctx(c) c->md_info
 #endif /* MBEDTLS_VERSION_MAJOR < 3 */
 #else  /* MBEDTLS_VERSION_MAJOR */
 #include <mbedtls/build_info.h>
 #if MBEDTLS_VERSION_MAJOR < 3
 #define MBEDTLS_PRIVATE(X) X
+#else /* MBEDTLS_VERSION_MAJOR < 3 */
+#if MBEDTLS_VERSION_MINOR < 2
+#define mbedtls_md_info_from_ctx(c) c->md_info
+#endif /* MBEDTLS_VERSION_MAJOR < 2 */
 #endif /* MBEDTLS_VERSION_MAJOR < 3 */
 #endif /* MBEDTLS_VERSION_MAJOR */
 #endif /* MBEDCRYPTO_COMPAT_H */
