@@ -16,4 +16,8 @@ __attribute__((weak))
 int gethostname(char *name, int len);
 #endif /* ESP_IDF_VERSION_MAJOR */
 
+/* Workaround to reduce dependence on lwip config */
+__attribute__((weak)) char* if_indextoname(unsigned int, char*) { return 0; }
+__attribute__((weak)) unsigned int if_nametoindex(const char *ifname) { return 0; }
+
 #endif /* LIBSSH_ESP32_COMPAT_H */

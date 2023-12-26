@@ -5,8 +5,8 @@ SRC_DIRS
   "src/external"
 INCLUDE_DIRS
   "src"
-REQUIRES
-  mbedtls
+PRIV_REQUIRES
+  mbedtls lwip
 )
 
 # Temporary hack
