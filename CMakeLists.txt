@@ -14,3 +14,7 @@ idf_build_set_property(COMPILE_DEFINITIONS "-DESP32" APPEND)
 
 # Silence char subscripts warning, until it is fixed upstream
 idf_build_set_property(COMPILE_OPTIONS "-Wno-char-subscripts" APPEND)
+
+# Silence fall through, until it is fixed upstream
+idf_build_set_property(COMPILE_OPTIONS "-Wno-implicit-fallthrough" APPEND)
+
