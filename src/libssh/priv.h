@@ -374,6 +374,7 @@ void explicit_bzero(void *s, size_t n);
  *    warning C4003: not enough actual parameters for macro '_VA_ARG_N'
  *  and incorrect behavior. This fixes issue.
  */
+#ifndef __VA_NARG__
 #define VA_APPLY_VARIADIC_MACRO(macro, tuple) macro tuple
 
 #define __VA_NARG__(...) \
@@ -396,6 +397,8 @@ void explicit_bzero(void *s, size_t n);
         29, 28, 27, 26, 25, 24, 23, 22, 21, 20, \
         19, 18, 17, 16, 15, 14, 13, 12, 11, 10, \
          9,  8,  7,  6,  5,  4,  3,  2,  1,  0
+
+#endif /* __VA_NARG__ */
 
 #define CLOSE_SOCKET(s) do { if ((s) != SSH_INVALID_SOCKET) { _XCLOSESOCKET(s); (s) = SSH_INVALID_SOCKET;} } while(0)
 
