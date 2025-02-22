@@ -1975,7 +1975,7 @@ char *ssh_strreplace(const char *src, const char *pattern, const char *replace)
  */
 char *ssh_strerror(int err_num, char *buf, size_t buflen)
 {
-#if ((defined(__linux__) && defined(__GLIBC__)) || defined(__CYGWIN__)) && defined(_GNU_SOURCE)
+#if defined(__GNU_VISIBLE)
     /* GNU extension on Linux */
     return strerror_r(err_num, buf, buflen);
 #else

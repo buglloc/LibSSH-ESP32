@@ -1,0 +1,9 @@
+description: SSH client and SSH server library for ESP32 based on libssh
+url: https://github.com/ewpa/LibSSH-ESP32
+repository: https://github.com/ewpa/LibSSH-ESP32.git
+issues: https://github.com/ewpa/LibSSH-ESP32/issues
+version: 4.1.0
+
+dependencies:
+  espressif/libsodium: "^1.0.20~2"
+  idf: ">=5.4"
