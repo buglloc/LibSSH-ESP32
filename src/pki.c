@@ -705,8 +705,8 @@ int ssh_key_cmp(const ssh_key k1,
                       ssh_buffer_get_len(k1->cert));
     }
 
-    if (k1->type == SSH_KEYTYPE_ED25519 ||
-        k1->type == SSH_KEYTYPE_SK_ED25519) {
+    if (ssh_key_type_plain(k1->type) == SSH_KEYTYPE_ED25519 ||
+        ssh_key_type_plain(k1->type) == SSH_KEYTYPE_SK_ED25519) {
         return pki_ed25519_key_cmp(k1, k2, what);
     }
 
@@ -1625,14 +1625,16 @@ fail:
 /**
  * @brief Import a base64 formatted public key from a memory c-string.
  *
- * @param[in]  b64_key  The base64 key to format.
+ * Note that the public key is just the base64 part (without the key
+ * type prefix and comment suffix you can find in the OpenSSH public
+ * key file or known_hosts file).
  *
- * @param[in]  type     The type of the key to format.
- *
+ * @param[in]  b64_key  The base64 key to import.
+ * @param[in]  type     The type of the key to import.
  * @param[out] pkey     A pointer where the allocated key can be stored. You
  *                      need to free the memory using ssh_key_free().
  *
- * @return              SSH_OK on success, SSH_ERROR on error.
+ * @return              `SSH_OK` on success, `SSH_ERROR` on error.
  *
  * @see ssh_key_free()
  */
@@ -1933,14 +1935,16 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 /**
  * @brief Import a base64 formatted certificate from a memory c-string.
  *
- * @param[in]  b64_cert  The base64 cert to format.
+ * Note that the certificate is just the base64 part (without the key
+ * type prefix and comment suffix you can find in the OpenSSH certificate
+ * file).
  *
- * @param[in]  type     The type of the cert to format.
+ * @param[in]  b64_cert  The base64 cert to import.
+ * @param[in]  type     The type of the cert to import.
+ * @param[out] pkey     A pointer where the allocated certificate can be stored.
+ *                      You need to free the memory using ssh_key_free().
  *
- * @param[out] pkey     A pointer where the allocated key can be stored. You
- *                      need to free the memory using ssh_key_free().
- *
- * @return              SSH_OK on success, SSH_ERROR on error.
+ * @return              `SSH_OK` on success, `SSH_ERROR` on error.
  *
  * @see ssh_key_free()
  */

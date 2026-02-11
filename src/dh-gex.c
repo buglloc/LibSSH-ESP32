@@ -519,9 +519,9 @@ static int ssh_retrieve_dhgroup(char *moduli_file,
     }
 
     if (moduli_file != NULL)
-        moduli = fopen(moduli_file, "r");
+        moduli = ssh_strict_fopen(moduli_file, SSH_MAX_CONFIG_FILE_SIZE);
     else
-        moduli = fopen(MODULI_FILE, "r");
+        moduli = ssh_strict_fopen(MODULI_FILE, SSH_MAX_CONFIG_FILE_SIZE);
 
     if (moduli == NULL) {
         char err_msg[SSH_ERRNO_MSG_MAX] = {0};

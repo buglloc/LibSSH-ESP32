@@ -5,10 +5,10 @@
 // Arduino library header needed to report version information for libssh
 // to ESP32.
 //
-// Copyright (C) 2020–2025 Ewan Parker.
+// Copyright (C) 2020–2026 Ewan Parker.
 
 #pragma once
 
 #define LIBSSH_ESP32_VERSION_MAJOR 5
-#define LIBSSH_ESP32_VERSION_MINOR 7
+#define LIBSSH_ESP32_VERSION_MINOR 8
 #define LIBSSH_ESP32_VERSION_PATCH 0

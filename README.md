@@ -14,7 +14,7 @@ to your sketch:
     #include "libssh_esp32.h"
     libssh_begin();
 
-This library is currently built and tested against version 2.0.17 and 3.0.5 of
+This library is currently built and tested against version 2.0.17 and 3.0.7 of
 the ESP32 Arduino core for ESP32, ESP32-C3, ESP32-S2, and ESP32-S3 boards.
 It has also been built and tested using Arduino as a component of the ESP-IDF.
 Versions and boards outside of this list may function but have not been tested.
@@ -29,8 +29,8 @@ ESP32 Arduino framework compiled with the CONFIG_MBEDTLS_HARDWARE_SHA setting
 disabled in the sdkconfig.
 
 This port created by Ewan Parker on 18th April 2020.
-Last ported 9th September 2025, built with libssh commit 301d0e16, branch
--stable-0.11, version libssh-0.11.3.
+Last ported 10th February 2026, built with libssh commit ca9c055d, branch
+-stable-0.11, version libssh-0.11.4.
 
 [![pipeline status](https://gitlab.com/libssh/libssh-mirror/badges/master/pipeline.svg)](https://gitlab.com/libssh/libssh-mirror/commits/master)
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/libssh.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:libssh)

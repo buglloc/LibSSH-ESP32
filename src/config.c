@@ -223,10 +223,9 @@ local_parse_file(ssh_session session,
         return;
     }
 
-    f = fopen(filename, "r");
+    f = ssh_strict_fopen(filename, SSH_MAX_CONFIG_FILE_SIZE);
     if (f == NULL) {
-        SSH_LOG(SSH_LOG_RARE, "Cannot find file %s to load",
-                filename);
+        /* The underlying function logs the reasons */
         return;
     }
 
@@ -1066,13 +1065,11 @@ ssh_config_parse_line(ssh_session session,
         }
         break;
     case SOC_USERNAME:
-      if (session->opts.username == NULL) {
-          p = ssh_config_get_str_tok(&s, NULL);
-          if (p && *parsing) {
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
             ssh_options_set(session, SSH_OPTIONS_USER, p);
-         }
-      }
-      break;
+        }
+        break;
     case SOC_IDENTITY:
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
@@ -1466,8 +1463,9 @@ int ssh_config_parse_file(ssh_session session, const char *filename)
     int parsing, rv;
     bool global = 0;
 
-    f = fopen(filename, "r");
+    f = ssh_strict_fopen(filename, SSH_MAX_CONFIG_FILE_SIZE);
     if (f == NULL) {
+        /* The underlying function logs the reasons */
         return 0;
     }
 

@@ -1294,6 +1294,11 @@ int ssh_userauth_publickey_auto(ssh_session session,
     if (session == NULL) {
         return SSH_AUTH_ERROR;
     }
+
+    SSH_LOG(SSH_LOG_INFO,
+            "Starting authentication as a user %s",
+            username ? username : session->opts.username);
+
     if (! (session->opts.flags & SSH_OPT_FLAG_PUBKEY_AUTH)) {
         session->auth.supported_methods &= ~SSH_AUTH_METHOD_PUBLICKEY;
         return SSH_AUTH_DENIED;

@@ -36,6 +36,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #endif /* _WIN32 */
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,6 +136,8 @@ int ssh_check_username_syntax(const char *username);
 
 void ssh_proxyjumps_free(struct ssh_list *proxy_jump_list);
 bool ssh_libssh_proxy_jumps(void);
+
+FILE *ssh_strict_fopen(const char *filename, size_t max_file_size);
 
 #ifdef __cplusplus
 }

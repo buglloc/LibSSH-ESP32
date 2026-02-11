@@ -7,9 +7,13 @@
 #define PACKAGE "libssh"
 
 /* Version number of package */
-#define VERSION "0.11.3"
+#define VERSION "0.11.4"
 
 #define SYSCONFDIR "etc"
+
+/* Global configuration directory */
+/* #undef USR_GLOBAL_CONF_DIR */
+#define GLOBAL_CONF_DIR "/etc/ssh"
 
 /* Global bind configuration file path */
 #define GLOBAL_BIND_CONFIG "/etc/ssh/libssh_server_config"
@@ -281,7 +285,7 @@
 
 #ifndef HAVE_COMPILER__FUNC__
 #define HAVE_COMPILER__FUNC__ 1
-#endif
+#endif 
 
 // libssh-src-upstream/include/libssh/config.h
 

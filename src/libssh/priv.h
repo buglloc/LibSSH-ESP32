@@ -481,6 +481,9 @@ char *ssh_strerror(int err_num, char *buf, size_t buflen);
 #define SSH_TTY_MODES_MAX_BUFSIZE   (55 * 5 + 1)
 int encode_current_tty_opts(unsigned char *buf, size_t buflen);
 
+/** The default maximum file size for a configuration file */
+#define SSH_MAX_CONFIG_FILE_SIZE 16 * 1024 * 1024
+
 #ifdef __cplusplus
 }
 #endif
