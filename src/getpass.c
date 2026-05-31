@@ -217,16 +217,19 @@ int ssh_getpass(const char *prompt,
                 int echo,
                 int verify)
 {
+#ifdef HAVE_TERMIOS_H
     struct termios attr;
     struct termios old_attr;
-    int ok = 0;
     int fd = -1;
+#endif
+    int ok = 0;
 
     /* fgets needs at least len - 1 */
     if (prompt == NULL || buf == NULL || len < 2) {
         return -1;
     }
 
+#ifdef HAVE_TERMIOS_H
     if (isatty(STDIN_FILENO)) {
         ZERO_STRUCT(attr);
         ZERO_STRUCT(old_attr);
@@ -255,7 +258,11 @@ int ssh_getpass(const char *prompt,
             return -1;
         }
     }
+#else
+    (void)echo;
+#endif
 
+#ifdef HAVE_TERMIOS_H
     /* disable nonblocking I/O */
     if (fd & O_NDELAY) {
         ok = fcntl(0, F_SETFL, fd & ~O_NDELAY);
@@ -264,9 +271,11 @@ int ssh_getpass(const char *prompt,
             return -1;
         }
     }
+#endif
 
     ok = ssh_gets(prompt, buf, len, verify);
 
+#ifdef HAVE_TERMIOS_H
     if (isatty(STDIN_FILENO)) {
         /* reset terminal */
         tcsetattr(STDIN_FILENO, TCSANOW, &old_attr);
@@ -280,6 +289,7 @@ int ssh_getpass(const char *prompt,
             return -1;
         }
     }
+#endif
 
     if (!ok) {
         explicit_bzero(buf, len);

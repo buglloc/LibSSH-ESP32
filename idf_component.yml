@@ -5,5 +5,5 @@ issues: https://github.com/ewpa/LibSSH-ESP32/issues
 version: 4.1.0
 
 dependencies:
-  espressif/libsodium: "^1.0.20~2"
-  idf: ">=5.4"
+  espressif/libsodium: "^1.0.22"
+  idf: ">=5.5"

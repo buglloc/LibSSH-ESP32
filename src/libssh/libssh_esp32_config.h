@@ -57,7 +57,7 @@
 /* #undef HAVE_IO_H */
 
 /* Define to 1 if you have the <termios.h> header file. */
-#define HAVE_TERMIOS_H 1
+/* #undef HAVE_TERMIOS_H */
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
@@ -212,7 +212,7 @@
 #define HAVE_GCC_THREAD_LOCAL_STORAGE 1
 /* #undef HAVE_MSC_THREAD_LOCAL_STORAGE */
 
-// #undef HAVE_FALLTHROUGH_ATTRIBUTE
+#define HAVE_FALLTHROUGH_ATTRIBUTE 1
 #define HAVE_UNUSED_ATTRIBUTE 1
 #define HAVE_WEAK_ATTRIBUTE 1
 
