@@ -61,7 +61,7 @@ static int hash_hostname(const char *name,
                          size_t *hash_size)
 {
     int rc;
-    HMACCTX mac_ctx;
+    HMACCTX mac_ctx = NULL;
 
     mac_ctx = hmac_init(salt, salt_size, SSH_HMAC_SHA1);
     if (mac_ctx == NULL) {
@@ -81,8 +81,8 @@ static int hash_hostname(const char *name,
 
 static int match_hashed_hostname(const char *host, const char *hashed_host)
 {
-    char *hashed;
-    char *b64_hash;
+    char *hashed = NULL;
+    char *b64_hash = NULL;
     ssh_buffer salt = NULL;
     ssh_buffer hash = NULL;
     unsigned char hashed_buf[256] = {0};
@@ -216,11 +216,22 @@ ssh_known_hosts_entries_compare(struct ssh_knownhosts_entry *k1,
     return 0;
 }
 
-/* This method reads the known_hosts file referenced by the path
+/**
+ * @internal
+ *
+ * @brief Read entries from filename to provided list
+ *
+ * This method reads the known_hosts file referenced by the path
  * in  filename  argument, and entries matching the  match  argument
  * will be added to the list in  entries  argument.
  * If the  entries  list is NULL, it will allocate a new list. Caller
  * is responsible to free it even if an error occurs.
+ *
+ * @param match[in]       The host name (with port) to match against
+ * @param filename[in]    The known hosts file to parse
+ * @param entries[in,out] The list of entries to append matching ones
+ * @return                `SSH_OK` on missing file or success parsing,
+ *                        `SSH_ERROR` on error
  */
 static int ssh_known_hosts_read_entries(const char *match,
                                         const char *filename,
@@ -229,10 +240,10 @@ static int ssh_known_hosts_read_entries(const char *match,
     char line[MAX_LINE_SIZE];
     size_t lineno = 0;
     size_t len = 0;
-    FILE *fp;
+    FILE *fp = NULL;
     int rc;
 
-    fp = fopen(filename, "r");
+    fp = ssh_strict_fopen(filename, SSH_MAX_CONFIG_FILE_SIZE);
     if (fp == NULL) {
         char err_msg[SSH_ERRNO_MSG_MAX] = {0};
         SSH_LOG(SSH_LOG_TRACE, "Failed to open the known_hosts file '%s': %s",
@@ -288,7 +299,7 @@ static int ssh_known_hosts_read_entries(const char *match,
         for (it = ssh_list_get_iterator(*entries);
              it != NULL;
              it = it->next) {
-            struct ssh_knownhosts_entry *entry2;
+            struct ssh_knownhosts_entry *entry2 = NULL;
             int cmp;
             entry2 = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
             cmp = ssh_known_hosts_entries_compare(entry, entry2);
@@ -312,8 +323,8 @@ error:
 
 static char *ssh_session_get_host_port(ssh_session session)
 {
-    char *host_port;
-    char *host;
+    char *host_port = NULL;
+    char *host = NULL;
 
     if (session->opts.host == NULL) {
         ssh_set_error(session,
@@ -346,6 +357,33 @@ static char *ssh_session_get_host_port(ssh_session session)
 
 /**
  * @internal
+ *
+ * @brief Free known hosts entries list
+ *
+ * @param[in] entry_list The list of ssh_knownhosts_entry items
+ */
+static void ssh_knownhosts_entries_free(struct ssh_list *entry_list)
+{
+    struct ssh_iterator *it = NULL;
+
+    if (entry_list == NULL) {
+        return;
+    }
+
+    for (it = ssh_list_get_iterator(entry_list);
+         it != NULL;
+         it = ssh_list_get_iterator(entry_list)) {
+        struct ssh_knownhosts_entry *entry = NULL;
+
+        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+        ssh_knownhosts_entry_free(entry);
+        ssh_list_remove(entry_list, it);
+    }
+    ssh_list_free(entry_list);
+}
+/**
+ * @internal
+ *
  * @brief Check which host keys should be preferred for the session.
  *
  * This checks the known_hosts file to find out which algorithms should be
@@ -376,25 +414,23 @@ struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session)
         }
     }
 
-    host_port = ssh_session_get_host_port(session);
-    if (host_port == NULL) {
-        return NULL;
-    }
-
     list = ssh_list_new();
     if (list == NULL) {
         ssh_set_error_oom(session);
-        SAFE_FREE(host_port);
         return NULL;
+    }
+
+    host_port = ssh_session_get_host_port(session);
+    if (host_port == NULL) {
+        goto error;
     }
 
     rc = ssh_known_hosts_read_entries(host_port,
                                       session->opts.knownhosts,
                                       &entry_list);
     if (rc != 0) {
-        ssh_list_free(entry_list);
-        ssh_list_free(list);
-        return NULL;
+        SAFE_FREE(host_port);
+        goto error;
     }
 
     rc = ssh_known_hosts_read_entries(host_port,
@@ -402,21 +438,16 @@ struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session)
                                       &entry_list);
     SAFE_FREE(host_port);
     if (rc != 0) {
-        ssh_list_free(entry_list);
-        ssh_list_free(list);
-        return NULL;
+        goto error;
     }
 
     if (entry_list == NULL) {
-        ssh_list_free(list);
-        return NULL;
+        goto error;
     }
 
     count = ssh_list_count(entry_list);
     if (count == 0) {
-        ssh_list_free(list);
-        ssh_list_free(entry_list);
-        return NULL;
+        goto error;
     }
 
     for (it = ssh_list_get_iterator(entry_list);
@@ -460,6 +491,7 @@ struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session)
 
     return list;
 error:
+    ssh_knownhosts_entries_free(entry_list);
     ssh_list_free(list);
     return NULL;
 }
@@ -511,6 +543,7 @@ static const char *ssh_known_host_sigs_from_hostkey_type(enum ssh_keytypes_e typ
 
 /**
  * @internal
+ *
  * @brief Get the host keys algorithms identifiers from the known_hosts files
  *
  * This expands the signatures types that can be generated from the keys types
@@ -530,7 +563,7 @@ char *ssh_known_hosts_get_algorithms_names(ssh_session session)
     char *host_port = NULL;
     size_t count;
     bool needcomma = false;
-    char *names;
+    char *names = NULL;
 
     int rc;
 
@@ -555,7 +588,7 @@ char *ssh_known_hosts_get_algorithms_names(ssh_session session)
                                       &entry_list);
     if (rc != 0) {
         SAFE_FREE(host_port);
-        ssh_list_free(entry_list);
+        ssh_knownhosts_entries_free(entry_list);
         return NULL;
     }
 
@@ -564,7 +597,7 @@ char *ssh_known_hosts_get_algorithms_names(ssh_session session)
                                       &entry_list);
     SAFE_FREE(host_port);
     if (rc != 0) {
-        ssh_list_free(entry_list);
+        ssh_knownhosts_entries_free(entry_list);
         return NULL;
     }
 
@@ -638,7 +671,7 @@ int ssh_known_hosts_parse_line(const char *hostname,
 {
     struct ssh_knownhosts_entry *e = NULL;
     char *known_host = NULL;
-    char *p;
+    char *p = NULL;
     char *save_tok = NULL;
     enum ssh_keytypes_e key_type;
     int match = 0;
@@ -805,7 +838,6 @@ out:
 enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
 {
     struct ssh_list *entry_list = NULL;
-    struct ssh_iterator *it = NULL;
     char *host_port = NULL;
     bool global_known_hosts_found = false;
     bool known_hosts_found = false;
@@ -866,7 +898,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
                                           &entry_list);
         if (rc != 0) {
             SAFE_FREE(host_port);
-            ssh_list_free(entry_list);
+            ssh_knownhosts_entries_free(entry_list);
             return SSH_KNOWN_HOSTS_ERROR;
         }
     }
@@ -877,7 +909,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
                                           &entry_list);
         if (rc != 0) {
             SAFE_FREE(host_port);
-            ssh_list_free(entry_list);
+            ssh_knownhosts_entries_free(entry_list);
             return SSH_KNOWN_HOSTS_ERROR;
         }
     }
@@ -889,16 +921,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
         return SSH_KNOWN_HOSTS_UNKNOWN;
     }
 
-    for (it = ssh_list_get_iterator(entry_list);
-         it != NULL;
-         it = ssh_list_get_iterator(entry_list)) {
-        struct ssh_knownhosts_entry *entry = NULL;
-
-        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
-        ssh_knownhosts_entry_free(entry);
-        ssh_list_remove(entry_list, it);
-    }
-    ssh_list_free(entry_list);
+    ssh_knownhosts_entries_free(entry_list);
 
     return SSH_KNOWN_HOSTS_OK;
 }
@@ -1085,13 +1108,13 @@ ssh_known_hosts_check_server_key(const char *hosts_entry,
                                       filename,
                                       &entry_list);
     if (rc != 0) {
-        ssh_list_free(entry_list);
+        ssh_knownhosts_entries_free(entry_list);
         return SSH_KNOWN_HOSTS_UNKNOWN;
     }
 
     it = ssh_list_get_iterator(entry_list);
     if (it == NULL) {
-        ssh_list_free(entry_list);
+        ssh_knownhosts_entries_free(entry_list);
         return SSH_KNOWN_HOSTS_UNKNOWN;
     }
 
@@ -1121,16 +1144,7 @@ ssh_known_hosts_check_server_key(const char *hosts_entry,
         }
     }
 
-    for (it = ssh_list_get_iterator(entry_list);
-         it != NULL;
-         it = ssh_list_get_iterator(entry_list)) {
-        struct ssh_knownhosts_entry *entry = NULL;
-
-        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
-        ssh_knownhosts_entry_free(entry);
-        ssh_list_remove(entry_list, it);
-    }
-    ssh_list_free(entry_list);
+    ssh_knownhosts_entries_free(entry_list);
 
     return found;
 }
@@ -1202,6 +1216,8 @@ ssh_session_get_known_hosts_entry(ssh_session session,
 }
 
 /**
+ * @internal
+ *
  * @brief Get the known_hosts entry for the current connected session
  *        from the given known_hosts file.
  *

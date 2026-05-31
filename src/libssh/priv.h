@@ -392,6 +392,7 @@ void explicit_bzero(void *s, size_t n);
  */
 #define discard_const_p(type, ptr) ((type *)discard_const(ptr))
 
+#ifndef __VA_NARG__
 /**
  * Get the argument count of variadic arguments
  */
@@ -423,6 +424,7 @@ void explicit_bzero(void *s, size_t n);
         29, 28, 27, 26, 25, 24, 23, 22, 21, 20, \
         19, 18, 17, 16, 15, 14, 13, 12, 11, 10, \
          9,  8,  7,  6,  5,  4,  3,  2,  1,  0
+#endif
 
 #define CLOSE_SOCKET(s) do { if ((s) != SSH_INVALID_SOCKET) { _XCLOSESOCKET(s); (s) = SSH_INVALID_SOCKET;} } while(0)
 
@@ -478,6 +480,9 @@ char *ssh_strerror(int err_num, char *buf, size_t buflen);
 /** 55 defined options (5 bytes each) + terminator */
 #define SSH_TTY_MODES_MAX_BUFSIZE   (55 * 5 + 1)
 int encode_current_tty_opts(unsigned char *buf, size_t buflen);
+
+/** The default maximum file size for a configuration file */
+#define SSH_MAX_CONFIG_FILE_SIZE 16 * 1024 * 1024
 
 #ifdef __cplusplus
 }

@@ -4,7 +4,7 @@
 // Simple port of examples/libssh_scp.c over WiFi.  Run with a serial monitor at
 // 115200 BAUD.
 //
-// Copyright (C) 2016–2024 Ewan Parker.
+// Copyright (C) 2016–2025 Ewan Parker.
 
 /* libssh_scp.c
  * Sample implementation of a SCP client
@@ -54,9 +54,9 @@ const unsigned int configSTACK = 40960;
 #define BUF_SIZE 4096
 #endif
 
-static char **sources;
+static char **sources = NULL;
 static int nsources;
-static char *destination;
+static char *destination = NULL;
 static int verbosity = 0;
 
 struct location {
@@ -541,10 +541,11 @@ static void location_free(struct location *loc)
     }
 }
 
-static struct location *parse_location(char *ploc) {
-    char *loc = strdup(ploc);
-    struct location *location;
-    char *ptr;
+static struct location *parse_location(char *ploc)
+{
+    struct location *location = NULL;
+    char *ptr = NULL;
+
 
     location = (struct location*)malloc(sizeof(struct location));
     if (location == NULL) {

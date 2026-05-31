@@ -189,8 +189,8 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
         }
 
         if (bind_addr) {
-            struct addrinfo *bind_ai;
-            struct addrinfo *bind_itr;
+            struct addrinfo *bind_ai = NULL;
+            struct addrinfo *bind_itr = NULL;
 
             SSH_LOG(SSH_LOG_PACKET, "Resolving %s", bind_addr);
 
@@ -281,6 +281,9 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
      * connection, otherwise return the first address without error or error */
     if (s == -1) {
         s = first;
+    } else if (s != first && first != -1) {
+        /* Clean up the saved socket if any */
+        ssh_connect_socket_close(first);
     }
 
     return s;

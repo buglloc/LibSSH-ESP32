@@ -200,7 +200,7 @@ local_parse_file(ssh_bind bind,
                  uint8_t *seen,
                  unsigned int depth)
 {
-    FILE *f;
+    FILE *f = NULL;
     char line[MAX_LINE_SIZE] = {0};
     unsigned int count = 0;
     int rv;
@@ -212,7 +212,7 @@ local_parse_file(ssh_bind bind,
         return;
     }
 
-    f = fopen(filename, "r");
+    f = ssh_strict_fopen(filename, SSH_MAX_CONFIG_FILE_SIZE);
     if (f == NULL) {
         SSH_LOG(SSH_LOG_RARE, "Cannot find file %s to load",
                 filename);
@@ -626,7 +626,7 @@ int ssh_bind_config_parse_file(ssh_bind bind, const char *filename)
 {
     char line[MAX_LINE_SIZE] = {0};
     unsigned int count = 0;
-    FILE *f;
+    FILE *f = NULL;
     uint32_t parser_flags;
     int rv;
 
@@ -636,7 +636,7 @@ int ssh_bind_config_parse_file(ssh_bind bind, const char *filename)
      * option to be redefined later by another file. */
     uint8_t seen[BIND_CFG_MAX] = {0};
 
-    f = fopen(filename, "r");
+    f = ssh_strict_fopen(filename, SSH_MAX_CONFIG_FILE_SIZE);
     if (f == NULL) {
         return 0;
     }

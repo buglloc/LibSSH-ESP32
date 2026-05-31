@@ -74,7 +74,7 @@
 static socket_t bind_socket(ssh_bind sshbind, const char *hostname,
     int port) {
     char port_c[6];
-    struct addrinfo *ai;
+    struct addrinfo *ai = NULL;
     struct addrinfo hints;
     int opt = 1;
     socket_t s;
@@ -132,8 +132,9 @@ static socket_t bind_socket(ssh_bind sshbind, const char *hostname,
     return s;
 }
 
-ssh_bind ssh_bind_new(void) {
-    ssh_bind ptr;
+ssh_bind ssh_bind_new(void)
+{
+    ssh_bind ptr = NULL;
 
     ptr = calloc(1, sizeof(struct ssh_bind_struct));
     if (ptr == NULL) {
@@ -217,27 +218,11 @@ static int ssh_bind_import_keys(ssh_bind sshbind) {
   return SSH_OK;
 }
 
-int ssh_bind_listen(ssh_bind sshbind) {
-    const char *host;
+int ssh_bind_listen(ssh_bind sshbind)
+{
+    const char *host = NULL;
     socket_t fd;
     int rc;
-
-    /* Apply global bind configurations, if it hasn't been applied before */
-    rc = ssh_bind_options_parse_config(sshbind, NULL);
-    if (rc != 0) {
-        ssh_set_error(sshbind, SSH_FATAL,"Could not parse global config");
-        return SSH_ERROR;
-    }
-
-    /* Set default hostkey paths if no hostkey was found before */
-    if (sshbind->ecdsakey == NULL &&
-        sshbind->rsakey == NULL &&
-        sshbind->ed25519key == NULL) {
-
-        sshbind->ecdsakey = strdup("/etc/ssh/ssh_host_ecdsa_key");
-        sshbind->rsakey = strdup("/etc/ssh/ssh_host_rsa_key");
-        sshbind->ed25519key = strdup("/etc/ssh/ssh_host_ed25519_key");
-    }
 
     /* Apply global bind configurations, if it hasn't been applied before */
     rc = ssh_bind_options_parse_config(sshbind, NULL);
@@ -288,10 +273,10 @@ int ssh_bind_listen(ssh_bind sshbind) {
         }
 
         sshbind->bindfd = fd;
-  } else {
-      SSH_LOG(SSH_LOG_DEBUG, "Using app-provided bind socket");
-  }
-  return 0;
+    } else {
+        SSH_LOG(SSH_LOG_DEBUG, "Using app-provided bind socket");
+    }
+    return 0;
 }
 
 int ssh_bind_set_callbacks(ssh_bind sshbind, ssh_bind_callbacks callbacks, void *userdata)
@@ -462,7 +447,7 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd)
                 return SSH_ERROR;
             }
         } else {
-            char *p;
+            char *p = NULL;
             /* If something was set to the session prior to calling this
              * function, keep only what is allowed by the options set in
              * sshbind */

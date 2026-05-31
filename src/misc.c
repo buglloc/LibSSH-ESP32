@@ -41,6 +41,7 @@
 #endif /* _WIN32 */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -405,7 +406,7 @@ int ssh_is_ipaddr(const char *str)
 
 char *ssh_lowercase(const char* str)
 {
-  char *new, *p;
+  char *new = NULL, *p = NULL;
 
   if (str == NULL) {
     return NULL;
@@ -459,11 +460,11 @@ char *ssh_hostport(const char *host, int port)
 char *ssh_get_hexa(const unsigned char *what, size_t len)
 {
     const char h[] = "0123456789abcdef";
-    char *hexa;
+    char *hexa = NULL;
     size_t i;
     size_t hlen = len * 3;
 
-    if (len > (UINT_MAX - 1) / 3) {
+    if (what == NULL || len < 1 || len > (UINT_MAX - 1) / 3) {
         return NULL;
     }
 
@@ -729,7 +730,7 @@ struct ssh_list *ssh_list_new(void)
 
 void ssh_list_free(struct ssh_list *list)
 {
-    struct ssh_iterator *ptr, *next;
+    struct ssh_iterator *ptr = NULL, *next = NULL;
     if (!list)
         return;
     ptr = list->root;
@@ -750,7 +751,7 @@ struct ssh_iterator *ssh_list_get_iterator(const struct ssh_list *list)
 
 struct ssh_iterator *ssh_list_find(const struct ssh_list *list, void *value)
 {
-    struct ssh_iterator *it;
+    struct ssh_iterator *it = NULL;
 
     for (it = ssh_list_get_iterator(list); it != NULL ; it = it->next)
         if (it->data == value)
@@ -840,7 +841,7 @@ int ssh_list_prepend(struct ssh_list *list, const void *data)
 
 void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator)
 {
-  struct ssh_iterator *ptr, *prev;
+  struct ssh_iterator *ptr = NULL, *prev = NULL;
 
   if (list == NULL) {
       return;
@@ -981,7 +982,7 @@ char *ssh_dirname (const char *path)
 char *ssh_basename (const char *path)
 {
   char *new = NULL;
-  const char *s;
+  const char *s = NULL;
   size_t len;
 
   if (path == NULL || *path == '\0') {
@@ -1119,8 +1120,8 @@ int ssh_mkdirs(const char *pathname, mode_t mode)
  */
 char *ssh_path_expand_tilde(const char *d)
 {
-    char *h = NULL, *r;
-    const char *p;
+    char *h = NULL, *r = NULL;
+    const char *p = NULL;
     size_t ld;
     size_t lh = 0;
 
@@ -1135,7 +1136,7 @@ char *ssh_path_expand_tilde(const char *d)
 #ifdef _WIN32
         return strdup(d);
 #else
-        struct passwd *pw;
+        struct passwd *pw = NULL;
         size_t s = p - d;
         char u[128];
 
@@ -1196,7 +1197,7 @@ char *ssh_path_expand_escape(ssh_session session, const char *s)
     char *buf = NULL;
     char *r = NULL;
     char *x = NULL;
-    const char *p;
+    const char *p = NULL;
     size_t i, l;
 
     r = ssh_path_expand_tilde(s);
@@ -1349,8 +1350,8 @@ char *ssh_path_expand_escape(ssh_session session, const char *s)
  */
 int ssh_analyze_banner(ssh_session session, int server)
 {
-    const char *banner;
-    const char *openssh;
+    const char *banner = NULL;
+    const char *openssh = NULL;
 
     if (server) {
         banner = session->clientbanner;
@@ -1401,6 +1402,7 @@ int ssh_analyze_banner(ssh_session session, int server)
         char *tmp = NULL;
         unsigned long int major = 0UL;
         unsigned long int minor = 0UL;
+        int off = 0;
 
         /*
          * The banner is typical:
@@ -1420,8 +1422,9 @@ int ssh_analyze_banner(ssh_session session, int server)
             }
 
             errno = 0;
-            minor = strtoul(openssh + 10, &tmp, 10);
-            if ((tmp == (openssh + 10)) ||
+            off = major >= 10 ? 11 : 10;
+            minor = strtoul(openssh + off, &tmp, 10);
+            if ((tmp == (openssh + off)) ||
                 ((errno == ERANGE) && (major == ULONG_MAX)) ||
                 ((errno != 0) && (major == 0)) ||
                 (minor > 100)) {
@@ -1985,7 +1988,7 @@ char *ssh_strerror(int err_num, char *buf, size_t buflen)
     rv = strerror_s(buf, buflen, err_num);
 #else
     /* POSIX version available for example on FreeBSD or in musl libc */
-    rv = strerror_r(err_num, buf, buflen);
+    rv = (int)strerror_r(err_num, buf, buflen);
 #endif /* _WIN32 */
 
     /* make sure the buffer is initialized and terminated with NULL */
@@ -2244,6 +2247,79 @@ ssh_libssh_proxy_jumps(void)
     const char *t = getenv("OPENSSH_PROXYJUMP");
 
     return !(t != NULL && t[0] == '1');
+}
+
+/**
+ * @internal
+ *
+ * @brief Safely open a file containing some configuration.
+ *
+ * Runs checks if the file can be used as some configuration file (is regular
+ * file and is not too large). If so, returns the opened file (for reading).
+ * Otherwise logs error and returns `NULL`.
+ *
+ * @param filename      The path to the file to open.
+ * @param max_file_size Maximum file size that is accepted.
+ *
+ * @returns the opened file or `NULL` on error.
+ */
+FILE *ssh_strict_fopen(const char *filename, size_t max_file_size)
+{
+    FILE *f = NULL;
+    struct stat sb;
+    char err_msg[SSH_ERRNO_MSG_MAX] = {0};
+    int r, fd;
+
+    /* open first to avoid TOCTOU */
+    fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        SSH_LOG(SSH_LOG_RARE,
+                "Failed to open a file %s for reading: %s",
+                filename,
+                ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
+        return NULL;
+    }
+
+    /* Check the file is sensible for a configuration file */
+    r = fstat(fd, &sb);
+    if (r != 0) {
+        SSH_LOG(SSH_LOG_RARE,
+                "Failed to stat %s: %s",
+                filename,
+                ssh_strerror(errno, err_msg, SSH_ERRNO_MSG_MAX));
+        close(fd);
+        return NULL;
+    }
+    if ((sb.st_mode & S_IFMT) != S_IFREG) {
+        SSH_LOG(SSH_LOG_RARE,
+                "The file %s is not a regular file: skipping",
+                filename);
+        close(fd);
+        return NULL;
+    }
+
+    if ((size_t)sb.st_size > max_file_size) {
+        SSH_LOG(SSH_LOG_RARE,
+                "The file %s is too large (%jd MB > %zu MB): skipping",
+                filename,
+                (intmax_t)sb.st_size / 1024 / 1024,
+                max_file_size / 1024 / 1024);
+        close(fd);
+        return NULL;
+    }
+
+    f = fdopen(fd, "r");
+    if (f == NULL) {
+        SSH_LOG(SSH_LOG_RARE,
+                "Failed to open a file %s for reading: %s",
+                filename,
+                ssh_strerror(r, err_msg, SSH_ERRNO_MSG_MAX));
+        close(fd);
+        return NULL;
+    }
+
+    /* the flcose() will close also the underlying fd */
+    return f;
 }
 
 /** @} */

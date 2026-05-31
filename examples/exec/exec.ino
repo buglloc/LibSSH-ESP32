@@ -4,7 +4,7 @@
 // Simple port of examples/template.c over WiFi.  Run with a serial monitor at
 // 115200 BAUD.
 //
-// Copyright (C) 2016–2024 Ewan Parker.
+// Copyright (C) 2016–2025 Ewan Parker.
 
 /* simple exec example */
 
@@ -488,9 +488,10 @@ ssh_session connect_ssh(const char *host, const char *user,int verbosity){
 // EXAMPLE functions FINISH
 
 // EXAMPLE main START
-int ex_main(int argc, char **argv){
-    ssh_session session;
-    ssh_channel channel;
+int ex_main(int argc, char **argv)
+{
+    ssh_session session = NULL;
+    ssh_channel channel = NULL;
     char buffer[256];
     int rbytes, wbytes, total = 0;
     int rc;

@@ -519,9 +519,9 @@ static int ssh_retrieve_dhgroup(char *moduli_file,
     }
 
     if (moduli_file != NULL)
-        moduli = fopen(moduli_file, "r");
+        moduli = ssh_strict_fopen(moduli_file, SSH_MAX_CONFIG_FILE_SIZE);
     else
-        moduli = fopen(MODULI_FILE, "r");
+        moduli = ssh_strict_fopen(MODULI_FILE, SSH_MAX_CONFIG_FILE_SIZE);
 
     if (moduli == NULL) {
         char err_msg[SSH_ERRNO_MSG_MAX] = {0};
@@ -571,12 +571,12 @@ error:
 static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_request);
 static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_init);
 
-static ssh_packet_callback dhgex_server_callbacks[]= {
-    NULL, /* SSH_MSG_KEX_DH_GEX_REQUEST_OLD */
-    NULL, /* SSH_MSG_KEX_DH_GEX_GROUP */
+static ssh_packet_callback dhgex_server_callbacks[] = {
+    NULL,                           /* SSH_MSG_KEX_DH_GEX_REQUEST_OLD */
+    NULL,                           /* SSH_MSG_KEX_DH_GEX_GROUP */
     ssh_packet_server_dhgex_init,   /* SSH_MSG_KEX_DH_GEX_INIT */
     NULL,                           /* SSH_MSG_KEX_DH_GEX_REPLY */
-    ssh_packet_server_dhgex_request /* SSH_MSG_GEX_DH_GEX_REQUEST */
+    ssh_packet_server_dhgex_request /* SSH_MSG_KEX_DH_GEX_REQUEST */
 
 };
 

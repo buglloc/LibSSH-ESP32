@@ -785,7 +785,7 @@ ssh_session_set_disconnect_message(ssh_session session, const char *message)
 void
 ssh_disconnect(ssh_session session)
 {
-    struct ssh_iterator *it;
+    struct ssh_iterator *it = NULL;
     int rc;
 
     if (session == NULL) {
@@ -836,6 +836,7 @@ error:
     session->opts.fd = SSH_INVALID_SOCKET;
     session->session_state = SSH_SESSION_STATE_DISCONNECTED;
     session->pending_call_state = SSH_PENDING_CALL_NONE;
+    session->packet_state = PACKET_STATE_INIT;
 
     while ((it = ssh_list_get_iterator(session->channels)) != NULL) {
         ssh_channel_do_free(ssh_iterator_value(ssh_channel, it));
@@ -895,7 +896,7 @@ error:
  */
 const char *ssh_copyright(void)
 {
-    return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2024 "
+    return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2025 "
            "Aris Adamantiadis, Andreas Schneider "
            "and libssh contributors. "
            "Distributed under the LGPL, please refer to COPYING "

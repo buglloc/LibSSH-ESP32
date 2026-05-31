@@ -862,6 +862,22 @@ int ssh_scp_pull_request(ssh_scp scp)
         size = strtoull(tmp, NULL, 10);
         p++;
         name = strdup(p);
+        /* Catch invalid name:
+         *  - empty ones
+         *  - containing any forward slash -- directory traversal handled
+         *    differently
+         *  - special names "." and ".." referring to the current and parent
+         *    directories -- they are not expected either
+         */
+        if (name == NULL || name[0] == '\0' || strchr(name, '/') ||
+            strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+            ssh_set_error(scp->session,
+                          SSH_FATAL,
+                          "Received invalid filename: %s",
+                          name == NULL ? "<NULL>" : name);
+            SAFE_FREE(name);
+            goto error;
+        }
         SAFE_FREE(scp->request_name);
         scp->request_name = name;
         if (buffer[0] == 'C') {
